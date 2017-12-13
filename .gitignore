@@ -1,3 +1,10 @@
 
 *.tar
 *.tar
+assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_1
+assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_2
+assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_3
+assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_4
+assignment1/cs231n/datasets/cifar-10-batches-py/data_batch_5
+assignment1/cs231n/datasets/cifar-10-batches-py/test_batch
+*.meta
