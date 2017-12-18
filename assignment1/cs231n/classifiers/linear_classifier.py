@@ -3,7 +3,7 @@ from __future__ import print_function
 import numpy as np
 from cs231n.classifiers.linear_svm import *
 from cs231n.classifiers.softmax import *
-from past.builtins import xrange
+#from past.builtins import xrange
 
 
 class LinearClassifier(object):
@@ -54,7 +54,10 @@ class LinearClassifier(object):
       # replacement is faster than sampling without replacement.              #
       #########################################################################
       pass
-      #########################################################################
+      indexs = np.random.choice(num_train,batch_size) 
+      X_batch = X[indexs]
+      y_batch = y[indexs]
+   #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
 
@@ -68,6 +71,7 @@ class LinearClassifier(object):
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
       pass
+      self.W -= learning_rate * grad 
       #########################################################################
       #                       END OF YOUR CODE                                #
       #########################################################################
@@ -97,6 +101,8 @@ class LinearClassifier(object):
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
     pass
+    score = np.dot(X,self.W)
+    y_pred = np.argmax(score, axis = 1)
     ###########################################################################
     #                           END OF YOUR CODE                              #
     ###########################################################################
