@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from builtins import range
+from __builtin__ import range
 from six.moves import cPickle as pickle
 import numpy as np
 import os

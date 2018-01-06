@@ -1,4 +1,4 @@
-from builtins import range
+from __builtin__ import range
 import numpy as np
 
 
@@ -26,6 +26,9 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     pass
+    N = x.shape[0]
+    M = b.shape[0]
+    out = x.reshape((N,-1)).dot(w) + b.reshape(1,M)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -54,6 +57,12 @@ def affine_backward(dout, cache):
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     pass
+    N, D = x.shape[0], w.shape[0]
+    # be careful! x shape is (N, d1, ..., d_k), not (N,D)
+    dx = dout.dot(w.T).reshape(x.shape)
+    dw = (x.reshape(N,D).T).dot(dout)
+    db = np.sum(dout, axis = 0)
+  
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -76,6 +85,7 @@ def relu_forward(x):
     # TODO: Implement the ReLU forward pass.                                  #
     ###########################################################################
     pass
+    out = np.maximum(0,x)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -99,6 +109,8 @@ def relu_backward(dout, cache):
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
     pass
+    dx = dout
+    dx[x<0] = 0
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

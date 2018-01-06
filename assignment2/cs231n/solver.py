@@ -1,8 +1,8 @@
 from __future__ import print_function, division
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range
-from builtins import object
+#from __future__ import standard_library
+#standard_library.install_aliases()
+from __builtin__ import range
+from __builtin__ import object
 import os
 import pickle as pickle
 

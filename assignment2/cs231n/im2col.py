@@ -1,4 +1,4 @@
-from builtins import range
+from __builtin__ import range
 import numpy as np
 
 

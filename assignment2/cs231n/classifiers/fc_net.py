@@ -1,5 +1,5 @@
-from builtins import range
-from builtins import object
+from __builtin__ import range
+from __builtin__ import object
 import numpy as np
 
 from cs231n.layers import *
@@ -48,6 +48,10 @@ class TwoLayerNet(object):
         # and biases using the keys 'W2' and 'b2'.                                 #
         ############################################################################
         pass
+        self.params['W1'] = np.random.randn(input_dim, hidden_dim) * weight_scale
+        self.params['b1'] = np.zeros(hidden_dim)
+        self.params['W2'] = np.random.randn(hidden_dim, num_classes) * weight_scale
+        self.params['b2'] = np.zeros(num_classes)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -78,6 +82,9 @@ class TwoLayerNet(object):
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
         pass
+        W1, b1 , W2, b2 = self.params['W1'], self.params['b1'], self.params['W2'] ,self.params['b2']
+        a1, first_cashe = affine_relu_forward(X, W1, b1)
+        scores, second_cache = affine_forward(a1, W2, b2)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -98,6 +105,12 @@ class TwoLayerNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         pass
+        loss , dscores = softmax_loss(scores, y)
+        da1, grads['W2'], grads['b2'] = affine_backward(dscores, second_cache)
+        dx , grads['W1'], grads['b1'] = affine_relu_backward(da1, first_cashe)
+        loss += 0.5*self.reg*(np.sum(W1*W1)+ np.sum(W2*W2))
+        grads['W1'] += self.reg * W1
+        grads['W2'] += self.reg * W2
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -164,6 +177,13 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zero.                                #
         ############################################################################
         pass
+        self.params['W1'] = np.random.randn(input_dim, hidden_dims[0]) * weight_scale
+        self.params['b1'] = np.zeros(hidden_dims[0])
+        for i in range(self.num_layers-2):
+            self.params['W'+str(i+2)] = np.random.randn(hidden_dims[i],hidden_dims[i+1]) * weight_scale
+            self.params['b'+str(i+2)] = np.zeros(hidden_dims[i+1])
+        self.params['W'+str(self.num_layers)] = np.random.randn(hidden_dims[self.num_layers-2], num_classes) * weight_scale
+        self.params['b'+ str(self.num_layers)] = np.zeros(num_classes)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -222,6 +242,25 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         pass
+        a = []
+        cashes = []
+        W = []
+        b = []
+        W.append(self.params['W1'])
+        b.append(self.params['b1'])
+        a1, first_cashe = affine_relu_forward(X,W[0],b[0])
+        a.append(a1)
+        cashes.append(first_cashe)
+        for i in range(self.num_layers-2):
+            W.append(self.params['W'+str(i+2)])
+            b.append(self.params['b'+str(i+2)])
+            ai, i_cashe = affine_relu_forward(a[i],W[i+1],b[i+1])
+            a.append(ai)
+            cashes.append(i_cashe)
+        W.append(self.params['W'+str(self.num_layers)])
+        b.append(self.params['b'+str(self.num_layers)])
+        scores, last_cashe = affine_forward(a[-1],W[-1],b[-1])
+        cashes.append(last_cashe)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -245,6 +284,16 @@ class FullyConnectedNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         pass
+        loss, dscores = softmax_loss(scores, y)
+        da = range(self.num_layers + 1)
+        da[self.num_layers] = dscores
+        for i in range(self.num_layers,0,-1):
+            if i == self.num_layers:
+                da[i-1], grads['W'+str(i)], grads['b' + str(i)] = affine_backward(da[i],cashes[i-1])
+            else:
+                da[i-1], grads['W'+str(i)], grads['b' + str(i)] = affine_relu_backward(da[i], cashes[i-1])
+            loss += 0.5*self.reg*np.sum(self.params['W'+str(i)] **2)
+            grads['W'+str(i)] += self.reg*self.params['W'+str(i)]
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
