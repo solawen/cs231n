@@ -49,6 +49,13 @@ class ThreeLayerConvNet(object):
         # of the output affine layer.                                              #
         ############################################################################
         pass
+        C, H, W = input_dim
+        self.params['W1'] = np.random.randn(num_filters, C, filter_size, filter_size) * weight_scale
+        self.params['b1'] = np.zeros(num_filters)
+        self.params['W2'] = np.random.randn(num_filters*H*W/4,hidden_dim) * weight_scale
+        self.params['b2'] = np.zeros(hidden_dim)
+        self.params['W3'] = np.random.randn(hidden_dim,num_classes) * weight_scale
+        self.params['b3'] = np.zeros(num_classes)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -81,6 +88,9 @@ class ThreeLayerConvNet(object):
         # variable.                                                                #
         ############################################################################
         pass
+        pooling_out, pooling_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        affine_out, affine_cache = affine_relu_forward(pooling_out, W2, b2)
+        scores, cache = affine_forward(affine_out, W3, b3)
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -96,6 +106,14 @@ class ThreeLayerConvNet(object):
         # for self.params[k]. Don't forget to add L2 regularization!               #
         ############################################################################
         pass
+        loss, dscore = softmax_loss(scores, y)
+        loss += 0.5 * self.reg * (np.sum(W1 **2)+np.sum(W2 **2)+np.sum(W3 **2))
+        daffine, grads['W3'], grads['b3'] = affine_backward(dscore,cache)
+        dpool,grads['W2'], grads['b2'] = affine_relu_backward(daffine, affine_cache)
+        dx,grads['W1'], grads['b1'] = conv_relu_pool_backward(dpool,pooling_cache)
+        grads['W1'] += self.reg * W1
+        grads['W2'] += self.reg * W2
+        grads['W3'] += self.reg * W3
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
