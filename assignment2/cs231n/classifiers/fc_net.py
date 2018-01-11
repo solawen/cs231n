@@ -182,6 +182,12 @@ class FullyConnectedNet(object):
         for i in range(self.num_layers-2):
             self.params['W'+str(i+2)] = np.random.randn(hidden_dims[i],hidden_dims[i+1]) * weight_scale
             self.params['b'+str(i+2)] = np.zeros(hidden_dims[i+1])
+            if self.use_batchnorm:
+                self.params['gamma' + str(i+1)] = np.ones(hidden_dims[i])
+                self.params['beta' + str(i+1)] = np.zeros(hidden_dims[i])
+        if self.use_batchnorm:
+            self.params['gamma' + str(self.num_layers - 1)] = np.ones(hidden_dims[-1])
+            self.params['beta' + str(self.num_layers - 1)] = np.zeros(hidden_dims[-1])
         self.params['W'+str(self.num_layers)] = np.random.randn(hidden_dims[self.num_layers-2], num_classes) * weight_scale
         self.params['b'+ str(self.num_layers)] = np.zeros(num_classes)
         ############################################################################
@@ -242,25 +248,22 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         pass
-        a = []
-        cashes = []
-        W = []
-        b = []
-        W.append(self.params['W1'])
-        b.append(self.params['b1'])
-        a1, first_cashe = affine_relu_forward(X,W[0],b[0])
-        a.append(a1)
-        cashes.append(first_cashe)
-        for i in range(self.num_layers-2):
-            W.append(self.params['W'+str(i+2)])
-            b.append(self.params['b'+str(i+2)])
-            ai, i_cashe = affine_relu_forward(a[i],W[i+1],b[i+1])
-            a.append(ai)
-            cashes.append(i_cashe)
-        W.append(self.params['W'+str(self.num_layers)])
-        b.append(self.params['b'+str(self.num_layers)])
-        scores, last_cashe = affine_forward(a[-1],W[-1],b[-1])
-        cashes.append(last_cashe)
+        hidden_layers, caches = range(self.num_layers + 1), range(self.num_layers)
+        dp_caches = range(self.num_layers - 1)
+        hidden_layers[0] = X
+        for i in range(self.num_layers):
+            W, b = self.params['W' + str(i+1)], self.params['b' + str(i+1)]
+            if i == self.num_layers - 1:
+                hidden_layers[i+1], caches[i] = affine_forward(hidden_layers[i], W, b)
+            else:
+                if self.use_batchnorm:
+                    gamma, beta = self.params['gamma' + str(i+1)], self.params['beta' + str(i+1)]
+                    hidden_layers[i+1], caches[i] = affine_bn_relu_forward(hidden_layers[i], W, b, gamma, beta, self.bn_params[i])
+                else:
+                    hidden_layers[i+1], caches[i] = affine_relu_forward(hidden_layers[i], W, b)
+                if self.use_dropout:
+                    hidden_layers[i+1], dp_caches[i] = dropout_forward(hidden_layers[i+1], self.dropout_param)
+        scores = hidden_layers[self.num_layers]
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -285,15 +288,23 @@ class FullyConnectedNet(object):
         ############################################################################
         pass
         loss, dscores = softmax_loss(scores, y)
-        da = range(self.num_layers + 1)
-        da[self.num_layers] = dscores
-        for i in range(self.num_layers,0,-1):
+        dhiddens = range(self.num_layers + 1)
+        dhiddens[self.num_layers] = dscores
+        for i in range(self.num_layers, 0, -1):
             if i == self.num_layers:
-                da[i-1], grads['W'+str(i)], grads['b' + str(i)] = affine_backward(da[i],cashes[i-1])
+                dhiddens[i-1], grads['W' + str(i)], grads['b'+str(i)] = affine_backward(dhiddens[i], caches[i-1])
             else:
-                da[i-1], grads['W'+str(i)], grads['b' + str(i)] = affine_relu_backward(da[i], cashes[i-1])
-            loss += 0.5*self.reg*np.sum(self.params['W'+str(i)] **2)
-            grads['W'+str(i)] += self.reg*self.params['W'+str(i)]
+                if self.use_dropout:
+                    dhiddens[i] = dropout_backward(dhiddens[i], dp_caches[i-1])
+                if self.use_batchnorm:
+                    dx, dw, db, dgamma, dbeta = affine_bn_relu_backward(dhiddens[i], caches[i-1])
+                    dhiddens[i-1], grads['W' + str(i)], grads['b' + str(i)] = dx, dw, db
+                    grads['gamma'+str(i)], grads['beta' + str(i)] = dgamma, dbeta
+                else:
+                    dx, dw, db = affine_relu_backward(dhiddens[i], caches[i-1])
+                    dhiddens[i-1], grads['W' + str(i)], grads['b' + str(i)] = dx, dw, db
+            loss += 0.5 * self.reg * np.sum(self.params['W' + str(i)] ** 2)
+            grads['W' + str(i)] += self.reg * self.params['W' + str(i)]
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
